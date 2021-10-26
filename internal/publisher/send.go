@@ -3,25 +3,19 @@ package publisher
 import (
 	"github.com/streadway/amqp"
 	"integration-rabbit-mq/internal/json"
+	"integration-rabbit-mq/internal/logs"
 	"integration-rabbit-mq/internal/repository"
-	"log"
 )
 
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
-}
-
 // client for rabbit mq
-func send() {
+func Send() {
 
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
+	conn, err := amqp.Dial("amqp://guest:guest@10.254.2.61:5672/")
+	logs.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	logs.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
@@ -32,13 +26,13 @@ func send() {
 		false,   // no-wait
 		nil,     // arguments
 	)
-	failOnError(err, "Failed to declare a queue")
+	logs.FailOnError(err, "Failed to declare a queue")
 
 	reserva, err := repository.GetReserva()
-	failOnError(err, "Failed to get data in repository")
+	logs.FailOnError(err, "Failed to get data in repository")
 
 	info, err := json.Serialize(reserva)
-	failOnError(err, "Failed to serialize an data")
+	logs.FailOnError(err, "Failed to serialize the data")
 
 	body := info
 	err = ch.Publish(
@@ -50,6 +44,6 @@ func send() {
 			ContentType: "application/json",
 			Body:        body,
 		})
-	failOnError(err, "Failed to publish a message")
+	logs.FailOnError(err, "Failed to establish a message")
 
 }
